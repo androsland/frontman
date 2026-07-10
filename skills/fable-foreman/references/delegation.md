@@ -11,7 +11,8 @@ CONTEXT: <file PATHS to read; current state; background>
 CONSTRAINTS: <stack, patterns, performance/compat requirements>
 MUST DO: <non-negotiables, incl. the exact verify command to run>
 MUST NOT: <the fence — files/scope off limits; no subagent spawning>
-OUTPUT FORMAT: <status-first report per the contract below, plus role shape>
+OUTPUT FORMAT: <the role's report contract: status-first for execution roles,
+              verdict-first for verifier tickets — see the vocabularies below>
 WRITE SET: <every file/glob this worker may create or modify — MANDATORY on
            every implementation ticket; omit only for read-only roles>
 ```
@@ -41,7 +42,7 @@ Only for genuinely independent tickets, and only with **provably disjoint write 
 
 **2. Verifier verdict** — `PASS` / `FAIL` / `PASS_WITH_NOTES` (verification.md), the **first line** of every verifier report regardless of which provider runs the verifier. A verdict is not a status; it grades a change, not a worker.
 
-**3. Ledger lifecycle** — per task: `PENDING → DISPATCHED → REPORTED(status) → VERIFYING → VERIFIED | FAILED | LOST`. `VERIFIED` requires a `PASS` (or a `PASS_WITH_NOTES` whose notes you resolved); a `FAIL` verdict moves the task to `FAILED` and spawns a fix wave. `LOST` = dispatched, never reported (timeout, crash, dead session).
+**3. Ledger lifecycle** — per task: `PENDING → DISPATCHED → REPORTED(status)`, branching on the status: `DONE`/`DONE_WITH_CONCERNS` (concerns resolved) → `VERIFYING → VERIFIED | FAILED`; `NEEDS_CONTEXT` → back to `PENDING` with a corrected ticket; `BLOCKED` → `PENDING` (re-route per the precedence table) or terminal `FAILED` if surfaced to the user. `VERIFIED` requires a `PASS` (or a `PASS_WITH_NOTES` whose notes you resolved); a `FAIL` verdict → `FAILED` + fix wave. `LOST` = dispatched, never reported.
 
 `BLOCKED` triage, in order: **(1)** Bad ticket (ambiguous, missing constraint) → fix ticket, same seat. **(2)** Capability gap → consult the precedence table. **(3)** External blocker (credentials, permissions, failing dependency) → surface to the user; do not work around it.
 
@@ -85,7 +86,7 @@ Findings from review/verification batch into **one** fix ticket carrying the com
 
 ## Ledger schema
 
-`.foreman/ledger.md`, written before the first dispatch of any multi-task run:
+`.foreman/ledger.md`, written before the **first delegated dispatch of any run** — a single-worker run gets the minimal form (BASELINE + one task row + Attempts):
 
 ```
 # Foreman Ledger — <task title>
