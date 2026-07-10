@@ -53,11 +53,6 @@ For any multi-file or multi-stage task, use the fable-foreman skill.
 - **For full orchestration:** Claude Code, any model — the stronger your session model, the more the economics favor delegation. On claude.ai/Desktop the skill still installs and runs in discipline mode.
 - **Optional:** OpenAI Codex CLI, installed and logged in. If present — and only with your explicit OK, since it spends your OpenAI subscription or API credits — execution can route to Codex tiers, discovered from your account at runtime and chosen per task the same way Claude tiers are. If absent, everything falls back to Claude workers. Nothing breaks.
 
-## Honest alternatives
-
-- **[claude-octopus](https://github.com/nyldn/claude-octopus)** — if you want a full multi-provider orchestration *platform* (10+ providers, consensus councils, 50 commands, enforcement hooks), octopus is more mature than this skill and actively maintained. Foreman is the narrow, opinionated alternative: one lead, cheap workers, blind verification, one-minute install.
-- **`opusplan`** — Claude Code's built-in alias routes Opus for plan mode and Sonnet outside it. Zero-setup, but only fires in Plan Mode and does no per-task judgment, no Codex, no verification.
-
 ## Notes on quotas
 
 Subscription users: subagent calls share your plan's quota — delegation buys *quality-per-token*, and cheaper tiers drain shared quota more slowly (some plans additionally meter cheaper tiers in larger buckets — check yours). It does not buy discounts. API users: the cost savings are direct.
