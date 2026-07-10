@@ -4,7 +4,7 @@ Orchestration's bottleneck isn't coordination — it's validation. This is where
 
 ## When the verifier is required
 
-In Full, Codex-boosted, and Codex-only modes: every accepted change, **except** single-file changes with no logic content (pure formatting, comments, docs). In the Discipline modes there is no blind verifier — the disclosed reduced-assurance rule in SKILL.md replaces this section, and acceptances are labeled "self-reviewed, not blind-verified." That's the whole rule. "It seemed straightforward" is not an exemption — straightforward-looking changes are where unreviewed regressions live. If you are tempted to skip the verifier, that impulse is itself a signal the change deserves one.
+In Full, Codex-boosted, Codex-only, and Delegate-only modes: every accepted change, **except** single-file changes with no logic content (pure formatting, comments, docs). In Delegate-only mode the verifier still runs, but deterministic checks nobody could execute remain **UNVERIFIED** until the user supplies their results — a verifier verdict cannot substitute for an unrun check, so acceptance waits on both. In the Discipline modes there is no blind verifier — the disclosed reduced-assurance rule in SKILL.md replaces this section, and acceptances are labeled "self-reviewed, not blind-verified." That's the whole rule. "It seemed straightforward" is not an exemption — straightforward-looking changes are where unreviewed regressions live. If you are tempted to skip the verifier, that impulse is itself a signal the change deserves one.
 
 ## Layer 1 — Deterministic checks (free, always first)
 
