@@ -1,0 +1,22 @@
+{
+  "name": "fable-foreman",
+  "description": "Turn your strongest Claude model into a team-lead orchestrator: it plans and reviews, delegates execution to the cheapest capable workers (Claude subagents or auto-detected Codex CLI workers), and blind-verifies everything before calling it done.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Jordan Olsen",
+    "email": "jordan@olsenbrands.com"
+  },
+  "homepage": "https://github.com/olsenbrands/fable-foreman",
+  "repository": "https://github.com/olsenbrands/fable-foreman",
+  "license": "MIT",
+  "keywords": [
+    "orchestration",
+    "model-routing",
+    "delegation",
+    "subagents",
+    "codex",
+    "cost-optimization",
+    "multi-agent",
+    "verification"
+  ]
+}
