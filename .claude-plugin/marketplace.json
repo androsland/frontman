@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "fable-foreman",
-      "description": "Turn your strongest Claude model into a team-lead orchestrator: it plans and reviews, delegates execution to the cheapest capable workers (Claude subagents or auto-detected Codex CLI workers), and blind-verifies everything before calling it done.",
+      "description": "Turn your strongest Claude model into a team-lead orchestrator: it plans and reviews, delegates execution to the cheapest capable workers (Claude subagents or auto-detected Codex CLI workers), and blind-verifies meaningful changes before accepting them.",
       "version": "0.1.0",
       "source": "./",
       "author": {

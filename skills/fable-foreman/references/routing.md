@@ -1,32 +1,40 @@
 # Routing: resolving capability classes to live models
 
-The skill's policy never names dated model IDs. This file is the procedure for resolving FRONTIER / WORKHORSE / FAST to whatever exists on the user's account **today**.
+The skill's policy never names dated model IDs. This file is the procedure for resolving FRONTIER / WORKHORSE / FAST to what exists on the user's account **today**.
+
+## The LEAD seat
+
+The session model is the **LEAD seat** — it runs you, the foreman. Do not assume it is frontier-class: sessions start on mid-tier models, org fallbacks, and cost-capped configs. If FRONTIER-class judgment work is on the plan and you cannot establish that the LEAD seat is frontier-class (from the session's own model identity), say so and suggest the user switch models — routing architecture decisions to a mid-tier seat while calling it FRONTIER violates the First Law with extra steps.
 
 ## Claude seats
 
-- **FRONTIER** = the session model. The user chose it; it's the strongest seat you have. You occupy it — that's why you delegate.
-- **WORKHORSE** = the `sonnet` alias. **FAST** = the `haiku` alias. Aliases resolve to the latest release in each family automatically — a new Sonnet ships and the skill needs zero edits.
-- Pass the model per dispatch via the Agent tool's `model` parameter (it overrides agent-file frontmatter). Treat the parameter as a *request*: runtimes may silently substitute if the org disallows a tier. If a dispatch behaves far above or below its class, note the tier as "unverified" in the ledger rather than asserting it.
-- **Effort dial** (separate from model): `low` for mechanical/scoped work, default `high`, `xhigh`+ only for the hardest verification or design calls. Deeper effort on a cheap model is often better economics than a tier bump — try that first for borderline tasks.
-- The built-in `Explore` agent inherits the session model (capped at Opus). From a Fable-tier session that is an expensive default for background scanning — dispatch `foreman-scout` (FAST) instead.
+- **WORKHORSE** = the `sonnet` alias; **FAST** = the `haiku` alias. Aliases track the latest release in each family automatically — new releases require zero skill edits.
+- Pass the model per dispatch via the Agent tool's `model` parameter (overrides agent-file frontmatter). Treat it as a *request*: runtimes may substitute if the org disallows a tier. If a dispatch behaves far above or below its class, log the seat as "unverified" rather than asserting it.
+- The built-in `Explore` agent inherits the session model (capped at Opus-tier) — from a strong LEAD session that's an expensive default for background scanning. Dispatch `foreman-scout` (FAST) instead.
 
-## Codex seats (when the probe passed)
+## Effort — use the controls that actually exist
 
-Discover the current lineup at runtime — do not trust training data, Codex ships new tiers frequently:
+Effort is a real dial, but only where a mechanism exists to set it. Per surface:
 
-1. `codex --version` and `codex exec --help` for flags.
-2. Read `~/.codex/config.toml` for the user's configured default (`model = ...`) — respect it as their WORKHORSE preference unless the task demands otherwise.
-3. If the current model families are unclear or the user names an unfamiliar tier, fetch the live docs (developers.openai.com/codex) before routing.
+- **Codex workers**: set it explicitly per invocation — `-c model_reasoning_effort=<level>` (see codex-workers.md).
+- **Claude subagents**: agent-file frontmatter carries a static default; if your harness offers a per-invocation effort control, use it. If it doesn't, do not pretend — convey expected depth in the ticket ("this is a mechanical batch edit; do not deliberate" / "reason carefully about the concurrency implications") and log only the effort you actually applied.
+- Heuristics: low/minimal for mechanical work; provider default for normal work; deep effort only for hard verification and design. Raising effort on a cheap seat is often better economics than raising the tier — try it first for borderline tasks (precedence table row 2).
 
-Map by each tier's *official positioning*, not its name. Example as of 2026-07 (verify before relying on it): the GPT-5.6 family ships as Sol (`gpt-5.6`, flagship — FRONTIER seat), Terra (`gpt-5.6-terra`, "everyday workhorse" — WORKHORSE), Luna (`gpt-5.6-luna`, "clear repeatable tasks" — FAST). Whatever the current names are, providers consistently ship a flagship/workhorse/fast triple; map positioning → class and record the mapping in the ledger so it's auditable.
+## Codex seats
+
+Follow codex-workers.md: probe → consent → **discover the account's actual tiers** (config.toml preference, `/model`, or asking the user; documentation ≠ entitlement; IDs differ by auth mode) → verify each tier you intend to use with one tiny call → map verified tiers to classes by the provider's published positioning → record the mapping in the ledger.
+
+Providers commonly ship flagship / workhorse / economy tiers, but treat that as a pattern to check, not an invariant. The user's configured default model is their *preference* — identify what it is before classifying it; a user who pinned the flagship as default did not thereby make the flagship your WORKHORSE.
+
+> **Dated example — not policy.** As of 2026-07 the Codex flagship family was GPT-5.6: Sol (flagship), Terra (positioned "everyday workhorse"), Luna ("clear repeatable tasks"), with ChatGPT-account logins using suffixed IDs (`gpt-5.6-sol`) where API-key auth used bare ones (`gpt-5.6`). By the time you read this, assume the lineup has changed — run the discovery procedure.
 
 ## Choosing the seat for a task
 
 1. Classify the task's *judgment content*, not its size. A 500-line mechanical rename is FAST; a 10-line concurrency fix is FRONTIER.
-2. Apply the First Law: pick the cheapest seat that clearly clears the quality bar; when unsure, one seat up.
-3. Claude vs Codex for the same class: prefer the provider whose quota is under less pressure; prefer cross-family pairing for build/verify (builder and verifier from different families); respect explicit user preference.
-4. Log every routing decision in one ledger line: `task → class → seat (+effort) — why`.
+2. Apply the First Law: cheapest seat that clearly clears the bar; unsure → one seat up.
+3. Claude vs Codex within a class: prefer the provider under less quota pressure; prefer cross-family pairing for build/verify; respect explicit user preference.
+4. Log every routing decision in one ledger line: `task → class → seat (+effort if applied) — why`.
 
 ## Currency rule
 
-If anything suggests your model knowledge is stale — an unfamiliar name from the user, an alias resolving oddly, a provider announcement — verify against live provider docs before routing. Guessing model capabilities from training data is how routing tables rot.
+If anything suggests your model knowledge is stale — an unfamiliar name from the user, an alias resolving oddly, an entitlement error on dispatch — verify against live provider docs or the account itself before routing. This repo's own first Codex dispatch failed on exactly this: a day-old model family, a CLI predating it, and an auth-mode ID split no static document had caught yet.
