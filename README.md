@@ -2,6 +2,8 @@
 
 **Your strongest model shouldn't be swinging the hammer.**
 
+Built in public by [DontSleepOnAI](https://dontsleeponai.com) — the story behind this skill (including the five-round adversarial review where OpenAI's newest model tore apart the first draft) lives there.
+
 Fable Foreman turns the most capable Claude model on your account into a team lead: it plans, routes each task to the cheapest worker that clears the quality bar — Claude subagents or OpenAI Codex CLI workers, auto-detected — and, in full orchestration mode, refuses to accept meaningful changes until a blind, fresh-context verifier reproduces the evidence. (Environments without subagents get an honest reduced-assurance mode that says so.)
 
 No dated model IDs in routing policy. No configuration files. No enforcement scripts. One skill, three agent roles, and a set of rules good enough that a frontier model actually follows them.
