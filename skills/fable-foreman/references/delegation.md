@@ -42,7 +42,13 @@ Only for genuinely independent tickets, and only with **provably disjoint write 
 
 **2. Verifier verdict** — `PASS` / `FAIL` / `PASS_WITH_NOTES` (verification.md), the **first line** of every verifier report regardless of which provider runs the verifier. A verdict is not a status; it grades a change, not a worker.
 
-**3. Ledger lifecycle** — per task: `PENDING → DISPATCHED → REPORTED(status)`, branching on the status: `DONE`/`DONE_WITH_CONCERNS` (concerns resolved) → `VERIFYING → VERIFIED | FAILED`; `NEEDS_CONTEXT` → back to `PENDING` with a corrected ticket; `BLOCKED` → `PENDING` (re-route per the precedence table) or terminal `FAILED` if surfaced to the user. `VERIFIED` requires a `PASS` (or a `PASS_WITH_NOTES` whose notes you resolved); a `FAIL` verdict → `FAILED` + fix wave. `LOST` = dispatched, never reported.
+**3. Ledger lifecycle** — per task: `PENDING → DISPATCHED → REPORTED(status)`, branching on the status: `NEEDS_CONTEXT` → back to `PENDING` with a corrected ticket; `BLOCKED` → `PENDING` (re-route per the precedence table) or terminal `FAILED` if surfaced to the user. For `DONE`/`DONE_WITH_CONCERNS` (concerns resolved), the terminal path depends on the task type:
+
+- **Implementation tasks** → `VERIFYING → VERIFIED | FAILED`. `VERIFIED` requires a `PASS` (or a `PASS_WITH_NOTES` whose notes you resolved); a `FAIL` verdict → `FAILED` + fix wave.
+- **Read-only tasks** (scout, advisory) → terminal `ACCEPTED` once the foreman has consumed the report — there is no diff to verify.
+- **Discipline modes** → terminal `SELF_REVIEWED` after the distinct self-review pass; never recorded as `VERIFIED`.
+
+`LOST` = dispatched, never reported.
 
 `BLOCKED` triage, in order: **(1)** Bad ticket (ambiguous, missing constraint) → fix ticket, same seat. **(2)** Capability gap → consult the precedence table. **(3)** External blocker (credentials, permissions, failing dependency) → surface to the user; do not work around it.
 

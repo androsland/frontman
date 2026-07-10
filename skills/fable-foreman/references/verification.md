@@ -4,7 +4,7 @@ Orchestration's bottleneck isn't coordination — it's validation. This is where
 
 ## When the verifier is required
 
-Every accepted change, **except** single-file changes with no logic content (pure formatting, comments, docs). That's the whole rule. "It seemed straightforward" is not an exemption — straightforward-looking changes are where unreviewed regressions live. If you are tempted to skip the verifier, that impulse is itself a signal the change deserves one.
+In Full, Codex-boosted, and Codex-only modes: every accepted change, **except** single-file changes with no logic content (pure formatting, comments, docs). In the Discipline modes there is no blind verifier — the disclosed reduced-assurance rule in SKILL.md replaces this section, and acceptances are labeled "self-reviewed, not blind-verified." That's the whole rule. "It seemed straightforward" is not an exemption — straightforward-looking changes are where unreviewed regressions live. If you are tempted to skip the verifier, that impulse is itself a signal the change deserves one.
 
 ## Layer 1 — Deterministic checks (free, always first)
 
@@ -26,7 +26,7 @@ Dispatch with:
 
 The verifier assumes the work is broken until it personally reproduces evidence otherwise: re-runs checks itself, walks the diff, and checks the *goal*, not just the checklist — "checks pass but the goal is broken" is a FAIL. Its tool allowlist is read-and-run only (`Read, Glob, Grep, Bash`) — no edit tools, no delegation, no skills — and its Bash use is check-only by contract.
 
-**The mutation backstop** (be honest about what it is): commit or stash so the tree is clean *before* dispatching the verifier; when it returns, `git status --porcelain` must be empty and `git rev-parse HEAD` unchanged. That detects mutations to tracked content and refs — it does not catch ignored files or external state, so this is contract-plus-detection, not a sandbox. Any detected mutation voids the verification and is itself a finding. For hard isolation, run the verifier as a Codex read-only reviewer (`--sandbox read-only`) or, once the change is committed, in a worktree.
+**The mutation backstop** (be honest about what it is): **commit the candidate change** so it is in the tree and the tree is clean *before* dispatching the verifier — never stash it, which would remove the very change under verification and leave the verifier validating the baseline. When the verifier returns, `git status --porcelain` must be empty and `git rev-parse HEAD` unchanged. That detects mutations to tracked content and refs — it does not catch ignored files or external state, so this is contract-plus-detection, not a sandbox. Any detected mutation voids the verification and is itself a finding. For hard isolation, run the verifier as a Codex read-only reviewer (`--sandbox read-only`) or, once the change is committed, in a worktree.
 
 Verdicts: `PASS` / `FAIL` / `PASS_WITH_NOTES` — the first line of the verifier's report, whichever provider runs it (a Codex read-only reviewer acting as verifier uses this vocabulary, not the worker statuses). Per-criterion evidence table; everything unexamined goes under **Not checked** and counts as NOT verified. `PASS_WITH_NOTES` is legal only when every *required* criterion passed and the notes concern non-required observations — a required criterion under a note is a `FAIL`.
 

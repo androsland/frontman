@@ -34,7 +34,7 @@ You are the foreman: the lead model on the job site, which is exactly why you sh
 
 In either Discipline mode, the blind-verifier requirement becomes a **disclosed reduced-assurance rule**: a distinct self-review pass against the original task, with every acceptance labeled "self-reviewed, not blind-verified" — never presented as verified.
 
-## Roles resolve to capability classes — never to hardcoded models
+## Roles resolve to capability classes — never to dated model IDs
 
 | Class | Work it gets | Claude seat | Codex seat |
 |---|---|---|---|
@@ -74,7 +74,7 @@ Worker reports are claims; grade the diff, not the narrative. Cheap checks first
 
 ## Durable state
 
-Before the **first delegated dispatch of any run** — including single-worker runs — write the ledger (`.foreman/ledger.md`; schema in delegation.md): baseline commit, task rows, append-only attempts. LOST recovery, attempt counting, and Codex consent all live there. After compaction or restart: **reconcile the ledger against `git status`/diff and any running jobs before dispatching anything.** A stale DONE is as dangerous as a stale PENDING.
+Before the **first delegated dispatch of any run** — including single-worker runs — and **on entering a Discipline mode for any multi-step task**, write the ledger (`.foreman/ledger.md`; schema in delegation.md): baseline commit, task rows, append-only attempts (Discipline tasks terminate at `SELF_REVIEWED`). LOST recovery, attempt counting, and Codex consent all live there. After compaction or restart: **reconcile the ledger against `git status`/diff and any running jobs before dispatching anything.** A stale DONE is as dangerous as a stale PENDING.
 
 ## Hard rails
 
