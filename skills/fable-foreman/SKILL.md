@@ -22,17 +22,18 @@ You are the foreman: the lead model on the job site, which is exactly why you sh
 
 ## Step 0 — Probe the job site (once per session, then cache)
 
-1. **Your own model** — you hold the LEAD seat. Do not assume it is frontier-class: if the session runs on a mid-tier model, say so and suggest switching before frontier-judgment work.
+1. **Your own model** — you hold the LEAD seat. If it's mid-tier, say so and suggest switching before frontier-judgment work.
 2. **Agent tool** — can you spawn subagents?
 3. **Real shell** — does Bash run on the user's machine (not a remote sandbox)?
 4. **Codex CLI** — see [references/codex-workers.md](references/codex-workers.md) for the version-tolerant probe. **Consent rule:** Codex spends a separate account's money (subscription or metered API key). Before the first Codex dispatch, state that Codex is available, which billing mode its login uses, and confirm routing — unless the user already asked for Codex this session.
 
 | Capabilities | Mode | Behavior |
 |---|---|---|
-| Agent tool + real shell | **Full** | Tier-routed workers, full contract |
-| Full + consented working Codex | **Codex-boosted** | Execution may route to Codex tiers |
-| Agent tool, no real shell | **Delegate-only** | Workers run, but deterministic checks you can't run are reported as UNVERIFIED — ask the user to run them; never mark them passed |
-| No Agent tool (claude.ai/Desktop) | **Discipline** | No tier routing, no blind verifier. Run the process honestly: separate plan / execute / self-review passes, ledger, statuses — and say this is same-model self-review, weaker than full mode |
+| Agent tool + real shell | **Full** | Tier-routed Claude workers, full contract |
+| Full + consented working Codex | **Codex-boosted** | Execution may also route to Codex tiers |
+| Real shell + consented Codex, no Agent tool | **Codex-only** | Codex workers + deterministic checks work; Claude-side verification is same-model — use a Codex read-only reviewer as the fresh second reader |
+| Agent tool, no real shell | **Delegate-only** | Workers run, but checks you can't run are reported UNVERIFIED — ask the user to run them; never mark them passed |
+| No Agent tool, no usable shell (claude.ai/Desktop) | **Discipline** | No tier routing, no blind verifier. Run the process honestly: separate plan / execute / self-review passes, ledger, statuses — and say this is same-model self-review, weaker than full mode |
 
 ## Roles resolve to capability classes — never to hardcoded models
 
@@ -52,15 +53,17 @@ Use stable aliases, never dated model IDs. Codex tiers must be **verified agains
 
 ## Delegate with a ticket, report with a status
 
-Every dispatch is a self-contained **7-section ticket** (TASK / EXPECTED OUTCOME / CONTEXT / CONSTRAINTS / MUST DO / MUST NOT / OUTPUT FORMAT). Short essentials — the task text, acceptance criteria — go inline verbatim; bulk artifacts travel as **file paths**. Workers open their report with exactly one status:
+Every dispatch is a self-contained ticket: **7 core sections** (TASK / EXPECTED OUTCOME / CONTEXT / CONSTRAINTS / MUST DO / MUST NOT / OUTPUT FORMAT) **plus a mandatory WRITE SET section on every implementation ticket**. Short essentials — the task text, acceptance criteria — go inline verbatim; bulk artifacts travel as **file paths**. Execution roles (worker, scout) open their report with exactly one status:
 
 `DONE` (with evidence) · `DONE_WITH_CONCERNS` · `NEEDS_CONTEXT` · `BLOCKED`
 
-A worker that never reports (timeout, crash) is **LOST**: reconcile its partial edits against the ledger baseline before doing anything else. The single authoritative escalation-and-retry precedence table — including when to raise effort, raise tier, take over, or stop — lives in [references/delegation.md](references/delegation.md). Never retry a seat a third time on unchanged input.
+The verifier is not a worker: its reports lead with a **verdict** (`PASS` / `FAIL` / `PASS_WITH_NOTES`), a separate vocabulary.
+
+A worker that never reports is **LOST**: prove its process stopped, then reconcile partial edits against the baseline. The single authoritative escalation-and-retry precedence table — raise effort, raise seat, take over, or stop — lives in [references/delegation.md](references/delegation.md). Never retry a seat a third time on unchanged input.
 
 ## Verify like you trust no one
 
-Worker reports are claims; grade the diff, not the narrative. Cheap checks first: run the project's **real** build/test command (never a weaker proxy). Then the blind verifier (`foreman-verifier`) — fresh context, no edit tools, given the *original* task verbatim, never the worker's restatement. **The verifier is required for every accepted change except single-file changes with no logic content** (pure formatting, docs, comments) — "it seemed trivial" is not an exemption for anything else. A reproduced deterministic failure outranks any verdict. Cross-family verification (Claude checks Codex work, and vice versa) is the default when both providers are present. Protocol and disagreement rules: [references/verification.md](references/verification.md).
+Worker reports are claims; grade the diff, not the narrative. Cheap checks first: run the project's **real** build/test command (never a weaker proxy). Then the blind verifier (`foreman-verifier`) — fresh context, no edit tools, given the *original* task verbatim, never the worker's restatement. **The verifier is required for every accepted change except single-file changes with no logic content** (pure formatting, docs, comments) — "it seemed trivial" is not an exemption for anything else. A reproduced deterministic failure outranks any verdict. Confirm the tree unchanged after any verifier run (`git status` vs pre-verify) — a mutating verifier voids the verification. Cross-family verification (Claude checks Codex work, and vice versa) is the default when both providers are present. Protocol and disagreement rules: [references/verification.md](references/verification.md).
 
 ## Budget discipline
 

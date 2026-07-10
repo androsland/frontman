@@ -1,6 +1,6 @@
 # Delegation: tickets, statuses, escalation, ledger
 
-## The 7-section ticket
+## The ticket: 7 core sections + WRITE SET
 
 Workers start with a fresh context. The ticket must carry everything; if the worker would need to ask a question, the ticket is incomplete.
 
@@ -12,7 +12,8 @@ CONSTRAINTS: <stack, patterns, performance/compat requirements>
 MUST DO: <non-negotiables, incl. the exact verify command to run>
 MUST NOT: <the fence — files/scope off limits; no subagent spawning>
 OUTPUT FORMAT: <status-first report per the contract below, plus role shape>
-WRITE SET: <every file/glob this worker may create or modify — required for implementation tickets>
+WRITE SET: <every file/glob this worker may create or modify — MANDATORY on
+           every implementation ticket; omit only for read-only roles>
 ```
 
 Inline-vs-path rule: short essentials go **inline verbatim** — the task text, acceptance criteria, a verifier's findings being handed to a fix worker. Bulk material — logs, diffs, generated docs, source files — travels as **paths** (workers read files themselves; artifacts go to `.foreman/scratch/`). A measured failure mode: a 42k-character dispatch prompt that was 99% pasted history.
@@ -29,7 +30,7 @@ Only for genuinely independent tickets, and only with **provably disjoint write 
 
 ## The three vocabularies (do not mix them)
 
-**1. Worker status** — the first line of every worker report, all roles:
+**1. Worker status** — the first line of every **execution-role** report (worker, scout — Claude or Codex alike). Verifier reports use vocabulary 2, never this one:
 
 | Status | Meaning | Foreman's move |
 |---|---|---|
@@ -38,9 +39,9 @@ Only for genuinely independent tickets, and only with **provably disjoint write 
 | `NEEDS_CONTEXT` | Missing information; no risky guesses made | Supply it; re-dispatch same worker, same seat |
 | `BLOCKED` | Cannot proceed | Triage below |
 
-**2. Verifier verdict** — `PASS` / `FAIL` / `PASS_WITH_NOTES` (verification.md). A verdict is not a status; it grades a change, not a worker.
+**2. Verifier verdict** — `PASS` / `FAIL` / `PASS_WITH_NOTES` (verification.md), the **first line** of every verifier report regardless of which provider runs the verifier. A verdict is not a status; it grades a change, not a worker.
 
-**3. Ledger lifecycle** — per task: `PENDING → DISPATCHED → REPORTED(status) → VERIFIED | FAILED | LOST`. `LOST` = dispatched, never reported (timeout, crash, dead session).
+**3. Ledger lifecycle** — per task: `PENDING → DISPATCHED → REPORTED(status) → VERIFYING → VERIFIED | FAILED | LOST`. `VERIFIED` requires a `PASS` (or a `PASS_WITH_NOTES` whose notes you resolved); a `FAIL` verdict moves the task to `FAILED` and spawns a fix wave. `LOST` = dispatched, never reported (timeout, crash, dead session).
 
 `BLOCKED` triage, in order: **(1)** Bad ticket (ambiguous, missing constraint) → fix ticket, same seat. **(2)** Capability gap → consult the precedence table. **(3)** External blocker (credentials, permissions, failing dependency) → surface to the user; do not work around it.
 
@@ -50,9 +51,10 @@ Reports are claims. Accept evidence — file:line references, command output, re
 
 A worker that hasn't reported within a reasonable bound for its task class, or whose process died:
 
-1. Mark `LOST` in the ledger. Record what you know (job ID, artifact paths, exit code if any).
-2. **Reconcile before retrying**: diff the tree against the ledger baseline. Partial edits are either completed by inspection (rare), reverted, or explicitly folded into the retry ticket. Never re-dispatch onto an unreconciled tree.
-3. A LOST dispatch counts as a failure toward the precedence table.
+1. **Prove it stopped first.** Check the recorded job's state; if it may still be running, terminate it and confirm a terminal state (exit code, dead process). Reconciling or retrying against a possibly-live worker creates exactly the concurrent-write race the WRITE SET rules exist to prevent.
+2. Mark `LOST` in the ledger. Record what you know (job ID, artifact paths, exit code).
+3. **Reconcile after the stop**: take a fresh diff against the ledger baseline. Partial edits are either completed by inspection (rare), reverted, or explicitly folded into the retry ticket. Never re-dispatch onto an unreconciled tree.
+4. A LOST dispatch counts as a failure toward the precedence table.
 
 Background jobs (including Codex workers): record the job identity and output path in the ledger **at dispatch time**, and capture exit codes on collection.
 
@@ -90,9 +92,15 @@ Findings from review/verification batch into **one** fix ticket carrying the com
 BASELINE: <commit hash> | <git status --porcelain summary> | <date>
 ## Plan       <numbered tasks, class per task>
 ## Routing    <task → seat (+effort if applied) — why, one line each>
-## Tasks      <id | lifecycle state | attempts | owned paths | job id/artifacts>
+## Tasks      <id | lifecycle state | owned paths | job id>
+## Attempts   <append-only, one line per attempt:
+              task | attempt # | seat + effort | ticket rev | outcome
+              (status/verdict/LOST + failure class) | checks run + results |
+              evidence/artifact paths | timestamp>
 ## Decisions  <choices + why; seat changes; degradations; consent grants>
 ## Scratch    <artifact paths>
 ```
+
+The Attempts table is what makes the precedence rules provable after compaction: "second real failure at this seat", "unchanged input", and "two consecutive failed fix waves" are all read directly off it — never reconstructed from memory.
 
 Update on every state change. **Resuming after compaction or restart:** read the ledger, then reconcile — `git status`/diff against BASELINE, check for still-running jobs, confirm REPORTED/VERIFIED states against actual artifacts — before dispatching anything. A stale `DONE` causes accepted-but-missing work; a stale `DISPATCHED` causes duplicate work. Trust the tree over the ledger.

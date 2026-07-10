@@ -8,16 +8,16 @@ No hardcoded models. No configuration files. No enforcement scripts. One skill, 
 
 ## Why
 
-Anthropic's own published numbers make the case: a frontier orchestrator with mid-tier workers hits **96% of all-frontier quality at 46% of the cost** on the BrowseComp benchmark ([Anthropic multi-agent docs](https://platform.claude.com/docs/en/managed-agents/multi-agent), mid-2026). The counterweight is real too — Anthropic's [multi-agent research system writeup](https://www.anthropic.com/engineering/multi-agent-research-system) measured orchestrator-worker systems at roughly **15x** the tokens of a single chat. And the community has receipts for what happens without discipline — press-reported incidents include $47k burned in 3 days by runaway subagents and a $100 daily budget gone in 9 minutes of unsupervised looping.
+Anthropic's own engineering shows both sides of the ledger. Their [multi-agent research system writeup](https://www.anthropic.com/engineering/multi-agent-research-system) found an orchestrator-plus-cheaper-subagents design strongly outperformed single agents — while consuming roughly **15x** the tokens of a single chat, which is why they conclude multi-agent work only pays for high-value tasks. Anthropic's multi-agent benchmarks published in mid-2026 reported a frontier-orchestrator/mid-tier-worker split retaining ~96% of all-frontier quality at ~46% of the cost (figures move with model generations — treat as directional, not gospel). And the community has receipts for what happens without discipline: press-reported incidents of runaway subagent loops burning thousands of dollars in days, and subscription budgets drained in minutes of unsupervised looping.
 
 The difference between those two outcomes is not orchestration machinery — it's **routing judgment and verification discipline**. That's what this skill installs.
 
 ## What it does
 
-1. **Probes the job site** — what model is the session running, can it spawn agents, is a working authenticated Codex CLI present (checked robustly: binary + credential file + a live `echo ok`, never fragile auth-status parsing).
+1. **Probes the job site** — what model is the session running, can it spawn agents, is a working Codex CLI present: binary on PATH, then `codex login status` for auth *and billing mode*, with a version-tolerant credential-file fallback if that subcommand ever changes — and no billable call, not even the functional `echo ok`, until you've consented to spending your OpenAI credits.
 2. **Routes by capability class, not model name** — FRONTIER (judgment), WORKHORSE (implementation), FAST (scanning). Classes resolve at runtime to stable aliases and to whatever Codex tiers your account offers today. New model releases require zero skill updates.
 3. **Delegates with self-contained tickets** — 7 sections, file paths instead of pasted context, gradeable acceptance criteria, an explicit fence.
-4. **Collects four-status reports** — `DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED` — with a bounded escalation ladder: two failures at a tier, then escalate or take over. Never a third identical retry.
+4. **Collects four-status reports** — `DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED` — with a bounded escalation ladder: two failures at a seat, then escalate one seat or take over. Never a third identical retry.
 5. **Verifies like it trusts no one** — the project's real build/test command first (free), then a blind verifier that gets the original task verbatim and none of the worker's reasoning. Required for every accepted change except single-file zero-logic edits. Cross-family when possible: Claude verifies Codex work and vice versa.
 6. **Respects your budget both directions** — sequential dispatch by default (prompt-cache warmth), announced fan-outs, and the degradation rule: under quota pressure it steps seats down *visibly* and prefers stopping cleanly over silently shipping degraded work. **Economics never lowers the quality bar.**
 
@@ -32,9 +32,15 @@ The difference between those two outcomes is not orchestration machinery — it'
 
 **Claude Code (manual):** clone this repo, copy `skills/fable-foreman` into `~/.claude/skills/` and `agents/*.md` into `~/.claude/agents/`.
 
-**Claude Desktop / claude.ai:** upload the release ZIP under Settings → Customize → Skills (requires code execution enabled; Pro/Max/Team plans). Without the Agent tool, the skill runs in *discipline mode* — separate plan/execute/self-review passes, ledger, and status contracts on your single conversation model. That's honest same-model self-review, weaker than full mode; the skill says so rather than pretending otherwise.
+**Claude Desktop / claude.ai:** package the skill folder as a ZIP and upload it under Settings → Customize → Skills (requires code execution enabled; see Anthropic's current docs for plan availability):
 
-**Recommended:** add one line to your `CLAUDE.md` so the skill fires reliably (measured: description-based triggering alone catches only ~50–60% of intended uses):
+```bash
+cd skills && zip -r fable-foreman-skill.zip fable-foreman/
+```
+
+Releases on this repo will also attach a pre-built `fable-foreman-skill.zip`. Without the Agent tool, the skill runs in *discipline mode* — separate plan/execute/self-review passes, ledger, and status contracts on your single conversation model. That's honest same-model self-review, weaker than full mode; the skill says so rather than pretending otherwise.
+
+**Recommended:** add one line to your `CLAUDE.md` so the skill fires reliably (the [fables project](https://github.com/czlonkowski/fables) measured description-based triggering alone at only ~50–60% recall):
 
 ```
 For any multi-file or multi-stage task, use the fable-foreman skill.

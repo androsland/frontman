@@ -10,7 +10,7 @@ codex login status                                 # 2. authenticated? which bil
 test -s "${CODEX_HOME:-$HOME/.codex}/auth.json"    # 2b. fallback if the subcommand errors
 ```
 
-- Step 2 is the documented status command; its output also tells you **how the account is billed** (ChatGPT subscription vs API key). If the subcommand itself fails to run (auth subcommands have been renamed across Codex releases before), fall back to the credential-file check — honoring `$CODEX_HOME`, and knowing some setups store credentials in an OS keyring instead, in which case only step 2 is reliable.
+- Step 2 is the documented status command; its output also tells you **how the account is billed** (ChatGPT subscription vs API key). If the subcommand itself fails to run (auth subcommands have been renamed across Codex releases before), the credential-file fallback proves only that credentials *exist* — it cannot tell you the billing mode. In that case the mode is **unknown**: say so, and require explicit user confirmation before any billable call. (Honor `$CODEX_HOME`; some setups store credentials in an OS keyring, where only the status command is reliable.)
 - **Do not use the GNU `timeout` command** — it doesn't exist on stock macOS or Windows. Use your shell tool's own timeout parameter, set generously (60s+): a slow response is latency, not absence.
 
 ## Consent and billing (before any model call)
@@ -54,7 +54,7 @@ codex exec -m <verified-model> -c model_reasoning_effort=<level> \
 
 ## Reading back
 
-Codex workers follow the same contract as Claude workers: **status as the first line of the final message** (`DONE` / `DONE_WITH_CONCERNS` / `NEEDS_CONTEXT` / `BLOCKED` — put this in every ticket's OUTPUT FORMAT), evidence not narrative, artifacts to `.foreman/scratch/` with paths. Treat Codex self-reports with the same distrust as any worker's — independent evaluators have measured frontier tiers gaming checks at record rates. Cross-family verification (Claude verifies Codex work) is the default.
+Codex workers follow the same contract as Claude workers: **status as the first line of the final message** (`DONE` / `DONE_WITH_CONCERNS` / `NEEDS_CONTEXT` / `BLOCKED` — put this in every execution ticket's OUTPUT FORMAT), evidence not narrative, artifacts to `.foreman/scratch/` with paths. A Codex read-only reviewer acting as the verifier is the one exception: it leads with the verifier verdict (`PASS` / `FAIL` / `PASS_WITH_NOTES`) per verification.md. Treat Codex self-reports with the same distrust as any worker's — independent evaluators have measured frontier tiers gaming checks at record rates. Cross-family verification (Claude verifies Codex work) is the default.
 
 ## Quota notes
 

@@ -24,9 +24,9 @@ Dispatch with:
 3. The acceptance criteria from the ticket, inline.
 4. **Nothing else.** No worker reasoning, no summaries. Anchoring the verifier on the builder's narrative defeats the point.
 
-The verifier assumes the work is broken until it personally reproduces evidence otherwise: re-runs checks itself, walks the diff, and checks the *goal*, not just the checklist — "checks pass but the goal is broken" is a FAIL. It has no edit tools and is forbidden from delegating; its only currency is findings.
+The verifier assumes the work is broken until it personally reproduces evidence otherwise: re-runs checks itself, walks the diff, and checks the *goal*, not just the checklist — "checks pass but the goal is broken" is a FAIL. Its tool allowlist is read-and-run only (`Read, Glob, Grep, Bash`) — no edit tools, no delegation, no skills — and its Bash use is check-only by contract. Because Bash can technically mutate, the foreman backstops the contract: snapshot `git status` before the verifier runs and confirm it unchanged after. Any mutation = the verification is void and the incident is itself a finding.
 
-Verdicts: `PASS` / `FAIL` / `PASS_WITH_NOTES`. Per-criterion evidence table; everything unexamined goes under **Not checked** and counts as NOT verified. `PASS_WITH_NOTES` is legal only when every *required* criterion passed and the notes concern non-required observations — a required criterion under a note is a `FAIL`.
+Verdicts: `PASS` / `FAIL` / `PASS_WITH_NOTES` — the first line of the verifier's report, whichever provider runs it (a Codex read-only reviewer acting as verifier uses this vocabulary, not the worker statuses). Per-criterion evidence table; everything unexamined goes under **Not checked** and counts as NOT verified. `PASS_WITH_NOTES` is legal only when every *required* criterion passed and the notes concern non-required observations — a required criterion under a note is a `FAIL`.
 
 ## Disagreement and flakiness rules
 

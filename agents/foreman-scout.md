@@ -5,6 +5,7 @@ description: >-
   location of relevant files and symbols, extraction of facts. Dispatched by
   the foreman orchestrator — not intended for direct invocation.
 model: haiku
+effort: low
 tools: Read, Glob, Grep
 ---
 

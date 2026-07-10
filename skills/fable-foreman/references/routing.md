@@ -17,7 +17,7 @@ The session model is the **LEAD seat** — it runs you, the foreman. Do not assu
 Effort is a real dial, but only where a mechanism exists to set it. Per surface:
 
 - **Codex workers**: set it explicitly per invocation — `-c model_reasoning_effort=<level>` (see codex-workers.md).
-- **Claude subagents**: agent-file frontmatter carries a static default; if your harness offers a per-invocation effort control, use it. If it doesn't, do not pretend — convey expected depth in the ticket ("this is a mechanical batch edit; do not deliberate" / "reason carefully about the concurrency implications") and log only the effort you actually applied.
+- **Claude subagents**: the bundled role files carry static defaults — scout `low`, worker `high`, verifier `high` — so a FAST scout never silently inherits an expensive session effort. If your harness offers a per-invocation effort control, it overrides these; if a model/effort combination isn't supported, the runtime falls back to the model's default — log what actually applied. Where no control exists, don't pretend: convey expected depth in the ticket ("mechanical batch edit; do not deliberate" / "reason carefully about the concurrency implications").
 - Heuristics: low/minimal for mechanical work; provider default for normal work; deep effort only for hard verification and design. Raising effort on a cheap seat is often better economics than raising the tier — try it first for borderline tasks (precedence table row 2).
 
 ## Codex seats
