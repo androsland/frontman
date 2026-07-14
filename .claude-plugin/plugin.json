@@ -1,13 +1,10 @@
 {
-  "name": "fable-foreman",
-  "description": "Turn your strongest Claude model into a team-lead orchestrator: it plans and reviews, delegates execution to the cheapest capable workers (Claude subagents or auto-detected Codex CLI workers), and blind-verifies meaningful changes before accepting them.",
-  "version": "0.1.0",
+  "name": "frontman",
+  "description": "Turn your strongest model into a team-lead orchestrator: it plans and reviews, routes execution to the cheapest capable seat (Claude subagents or auto-detected Codex CLI workers), and blind-verifies every meaningful change before accepting it. When a Workflow engine is present, the whole doctrine compiles into a deterministic, schema-enforced run. Derived from fable-foreman by Jordan Olsen.",
+  "version": "0.2.0",
   "author": {
-    "name": "Jordan Olsen",
-    "email": "jordan@olsenbrands.com"
+    "name": "Andreas Demetriou"
   },
-  "homepage": "https://github.com/olsenbrands/fable-foreman",
-  "repository": "https://github.com/olsenbrands/fable-foreman",
   "license": "MIT",
   "keywords": [
     "orchestration",
@@ -15,6 +12,7 @@
     "delegation",
     "subagents",
     "codex",
+    "workflow",
     "cost-optimization",
     "multi-agent",
     "verification"

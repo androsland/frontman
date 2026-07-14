@@ -1,2 +1,6 @@
 .DS_Store
 *.zip
+node_modules/
+
+# Frontman runtime state — ledger, scratch, journals are per-repo working files
+.frontman/

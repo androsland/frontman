@@ -40,11 +40,11 @@ Non-interactive, one task per invocation, seat and effort pinned per the routing
 ```bash
 # Advisory / review work — read-only sandbox:
 codex exec -m <verified-model> -c model_reasoning_effort=<level> \
-  --sandbox read-only -C <repo-path> - < .foreman/scratch/ticket-N.md
+  --sandbox read-only -C <repo-path> - < .frontman/scratch/ticket-N.md
 
 # Implementation work — writable workspace:
 codex exec -m <verified-model> -c model_reasoning_effort=<level> \
-  --sandbox workspace-write -C <repo-path> - < .foreman/scratch/ticket-N.md
+  --sandbox workspace-write -C <repo-path> - < .frontman/scratch/ticket-N.md
 ```
 
 - Write the ticket to a file and pipe via stdin (`- <`) — avoids shell-quoting bugs.
@@ -54,7 +54,7 @@ codex exec -m <verified-model> -c model_reasoning_effort=<level> \
 
 ## Reading back
 
-Codex workers follow the same contract as Claude workers: **status as the first line of the final message** (`DONE` / `DONE_WITH_CONCERNS` / `NEEDS_CONTEXT` / `BLOCKED` — put this in every execution ticket's OUTPUT FORMAT), evidence not narrative, artifacts to `.foreman/scratch/` with paths. A Codex read-only reviewer acting as the verifier is the one exception: it leads with the verifier verdict (`PASS` / `FAIL` / `PASS_WITH_NOTES`) per verification.md. Treat Codex self-reports with the same distrust as any worker's — independent evaluators have measured frontier tiers gaming checks at record rates. Cross-family verification (Claude verifies Codex work) is the default.
+Codex workers follow the same contract as Claude workers: **status as the first line of the final message** (`DONE` / `DONE_WITH_CONCERNS` / `NEEDS_CONTEXT` / `BLOCKED` — put this in every execution ticket's OUTPUT FORMAT), evidence not narrative, artifacts to `.frontman/scratch/` with paths. A Codex read-only reviewer acting as the verifier is the one exception: it leads with the verifier verdict (`PASS` / `FAIL` / `PASS_WITH_NOTES`) per verification.md. Treat Codex self-reports with the same distrust as any worker's — independent evaluators have measured frontier tiers gaming checks at record rates. Cross-family verification (Claude verifies Codex work) is the default.
 
 ## Quota notes
 

@@ -17,7 +17,7 @@ WRITE SET: <every file/glob this worker may create or modify — MANDATORY on
            every implementation ticket; omit only for read-only roles>
 ```
 
-Inline-vs-path rule: short essentials go **inline verbatim** — the task text, acceptance criteria, a verifier's findings being handed to a fix worker. Bulk material — logs, diffs, generated docs, source files — travels as **paths** (workers read files themselves; artifacts go to `.foreman/scratch/`). A measured failure mode: a 42k-character dispatch prompt that was 99% pasted history.
+Inline-vs-path rule: short essentials go **inline verbatim** — the task text, acceptance criteria, a verifier's findings being handed to a fix worker. Bulk material — logs, diffs, generated docs, source files — travels as **paths** (workers read files themselves; artifacts go to `.frontman/scratch/`). A measured failure mode: a 42k-character dispatch prompt that was 99% pasted history.
 
 One task per ticket. EXPECTED OUTCOME must be gradeable — if you can't write the acceptance check, you're not ready to delegate.
 
@@ -33,7 +33,7 @@ Only for genuinely independent tickets, and only with **provably disjoint write 
 
 **1. Worker status** — the first line of every **execution-role** report (worker, scout — Claude or Codex alike). Verifier reports use vocabulary 2, never this one:
 
-| Status | Meaning | Foreman's move |
+| Status | Meaning | Frontman's move |
 |---|---|---|
 | `DONE` | Complete, with evidence (commands run + results, files touched) | Deterministic checks → verifier |
 | `DONE_WITH_CONCERNS` | Complete, risks flagged | Resolve every concern before accepting; correctness concerns → fix now |
@@ -45,7 +45,7 @@ Only for genuinely independent tickets, and only with **provably disjoint write 
 **3. Ledger lifecycle** — per task: `PENDING → DISPATCHED → REPORTED(status)`, branching on the status: `NEEDS_CONTEXT` → back to `PENDING` with a corrected ticket; `BLOCKED` → `PENDING` (re-route per the precedence table) or terminal `FAILED` if surfaced to the user. For `DONE`/`DONE_WITH_CONCERNS` (concerns resolved), the terminal path depends on the task type:
 
 - **Implementation tasks** → `VERIFYING → VERIFIED | FAILED`. `VERIFIED` requires a `PASS` (or a `PASS_WITH_NOTES` whose notes you resolved); a `FAIL` verdict → `FAILED` + fix wave.
-- **Read-only tasks** (scout, advisory) → terminal `ACCEPTED` once the foreman has consumed the report — there is no diff to verify.
+- **Read-only tasks** (scout, advisory) → terminal `ACCEPTED` once the frontman has consumed the report — there is no diff to verify.
 - **Discipline modes** → terminal `SELF_REVIEWED` after the distinct self-review pass; never recorded as `VERIFIED`.
 
 `LOST` = dispatched, never reported.
@@ -73,8 +73,8 @@ For any failed, FAILED-verdict, or LOST task — apply the first matching row:
 |---|---|---|
 | 1 | Failure caused by the ticket (ambiguity, missing context) | Fix ticket; retry **same seat** (doesn't count against the seat) |
 | 2 | First real failure at this seat | Retry same seat with something changed: corrected ticket, added context, or raised effort |
-| 3 | Second real failure at this seat | Escalate one seat, **or** the foreman takes over — whichever the task's class warrants |
-| 4 | Failure at the top seat (or foreman takeover failed) | Stop; report to the user with evidence |
+| 3 | Second real failure at this seat | Escalate one seat, **or** the frontman takes over — whichever the task's class warrants |
+| 4 | Failure at the top seat (or frontman takeover failed) | Stop; report to the user with evidence |
 | 5 | Two consecutive failed **fix waves** against the same findings list | Stop; report to the user with the verifier's evidence — regardless of seats remaining |
 
 Never a third identical retry anywhere. Escalations are one-way per task: once a task proves it needs a seat, don't re-try a cheaper one on it. Rows 4–5 exist so "keep trying" never silently becomes the plan.
@@ -92,10 +92,20 @@ Findings from review/verification batch into **one** fix ticket carrying the com
 
 ## Ledger schema
 
-`.foreman/ledger.md`, written before the **first delegated dispatch of any run** — a single-worker run gets the minimal form (BASELINE + one task row + Attempts):
+**In Orchestrated mode the ledger is the Workflow journal** — every agent's real return value is recorded in `journal.jsonl`, so the Attempts history below is captured automatically and drift-free. Reconcile by reading the journal, not by hand. The rest of this section governs the **prose / Discipline modes**, where a `.frontman/ledger.*` file is maintained by the helper script rather than by hand-editing (which is exactly how ledgers drift):
 
 ```
-# Foreman Ledger — <task title>
+node <skill>/scripts/frontman.mjs ledger init --title "<run>"     # writes BASELINE (commit + porcelain + date)
+node <skill>/scripts/frontman.mjs ledger add --id t1 --class WORKHORSE --paths "a.ts,b.ts"
+node <skill>/scripts/frontman.mjs ledger set --id t1 --state DISPATCHED --seat sonnet --effort high --job <id>
+node <skill>/scripts/frontman.mjs ledger attempt --id t1 --seat sonnet --rev 1 --outcome DONE --checks "npm test: pass"
+node <skill>/scripts/frontman.mjs ledger reconcile                 # diffs BASELINE against the live tree
+```
+
+The script stores structured JSON at `.frontman/ledger.json` and renders `.frontman/ledger.md`. Written before the **first delegated dispatch of any run** — a single-worker run gets the minimal form (BASELINE + one task row + Attempts). The rendered shape:
+
+```
+# Frontman Ledger — <task title>
 BASELINE: <commit hash> | <git status --porcelain summary> | <date>
 ## Plan       <numbered tasks, class per task>
 ## Routing    <task → seat (+effort if applied) — why, one line each>
@@ -110,4 +120,20 @@ BASELINE: <commit hash> | <git status --porcelain summary> | <date>
 
 The Attempts table is what makes the precedence rules provable after compaction: "second real failure at this seat", "unchanged input", and "two consecutive failed fix waves" are all read directly off it — never reconstructed from memory.
 
-Update on every state change. **Resuming after compaction or restart:** read the ledger, then reconcile — `git status`/diff against BASELINE, check for still-running jobs, confirm REPORTED/VERIFIED states against actual artifacts — before dispatching anything. A stale `DONE` causes accepted-but-missing work; a stale `DISPATCHED` causes duplicate work. Trust the tree over the ledger.
+```
+# Frontman Ledger — <task title>
+BASELINE: <commit hash> | <git status --porcelain summary> | <date>
+## Plan       <numbered tasks, class per task>
+## Routing    <task → seat (+effort if applied) — why, one line each>
+## Tasks      <id | lifecycle state | owned paths | job id>
+## Attempts   <append-only, one line per attempt:
+              task | attempt # | seat + effort | ticket rev | outcome
+              (status/verdict/LOST + failure class) | checks run + results |
+              evidence/artifact paths | timestamp>
+## Decisions  <choices + why; seat changes; degradations; consent grants>
+## Scratch    <artifact paths>
+```
+
+The Attempts table is what makes the precedence rules provable after compaction: "second real failure at this seat", "unchanged input", and "two consecutive failed fix waves" are all read directly off it — never reconstructed from memory.
+
+Update on every state change (each `ledger set`/`attempt` call rewrites the rendered view). **Resuming after compaction or restart:** run `frontman ledger reconcile` (diffs BASELINE against the live tree and flags in-flight tasks), check for still-running jobs, confirm REPORTED/VERIFIED states against actual artifacts — before dispatching anything. A stale `DONE` causes accepted-but-missing work; a stale `DISPATCHED` causes duplicate work. Trust the tree over the ledger.

@@ -15,7 +15,7 @@ Run the project's **real** gate yourself via Bash before paying for model judgme
 
 A failing deterministic check needs no verifier — it goes straight into a fix ticket.
 
-## Layer 2 — The blind verifier (`foreman-verifier`)
+## Layer 2 — The blind verifier (`frontman-verifier`)
 
 Dispatch with:
 
@@ -32,7 +32,7 @@ Verdicts: `PASS` / `FAIL` / `PASS_WITH_NOTES` — the first line of the verifier
 
 ## Disagreement and flakiness rules
 
-- **A reproduced deterministic failure is authoritative.** If the foreman's check fails and the verifier says PASS (or vice versa), the failing run wins until explained.
+- **A reproduced deterministic failure is authoritative.** If the frontman's check fails and the verifier says PASS (or vice versa), the failing run wins until explained.
 - Suspected flaky test: at most **3 reruns** to characterize it. Inconsistent results = treat as failing; report the flake itself as a finding. Never rerun-until-green.
 - Verifier verdict vs deterministic evidence still unresolved after that → the change is **blocked**, not accepted. Report both artifacts to the user.
 
@@ -40,7 +40,7 @@ Verdicts: `PASS` / `FAIL` / `PASS_WITH_NOTES` — the first line of the verifier
 
 When both providers are available, verify across families: Codex built it → Claude verifies; Claude built it → a Codex read-only reviewer is a strong second opinion. Same-family reviewers share the builder's blind spots. This matters most at the frontier — independent pre-deployment evaluation in 2026 measured record rates of frontier models gaming checks (exploiting eval-environment bugs, extracting hidden test code). Worker self-reports from any provider's top tier are precisely what you don't trust.
 
-## Acceptance rules for the foreman
+## Acceptance rules for the frontman
 
 - Trust flows from artifacts: diffs, command output, file:line citations. Narrative counts for nothing.
 - A worker claiming a test passed is a claim; you or the verifier re-running it is a fact.
