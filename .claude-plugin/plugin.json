@@ -1,7 +1,7 @@
 {
   "name": "frontman",
   "description": "Turn your strongest model into a team-lead orchestrator: it plans and reviews, routes execution to the cheapest capable seat (Claude subagents or auto-detected Codex CLI workers), and blind-verifies every meaningful change before accepting it. When a Workflow engine is present, the whole doctrine compiles into a deterministic, schema-enforced run. Derived from fable-foreman by Jordan Olsen.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "author": {
     "name": "Andreas Demetriou"
   },

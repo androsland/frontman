@@ -8,7 +8,7 @@
     {
       "name": "frontman",
       "description": "Turn your strongest model into a team-lead orchestrator: it plans and reviews, routes execution to the cheapest capable seat (Claude subagents or auto-detected Codex CLI workers), and blind-verifies every meaningful change before accepting it. Compiles to a deterministic, schema-enforced Workflow when the harness supports one.",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "source": "./",
       "author": {
         "name": "Andreas Demetriou"
