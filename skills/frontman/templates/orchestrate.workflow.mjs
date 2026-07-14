@@ -146,6 +146,11 @@ function verifyPrompt(t, files) {
       if (last >= 0xD800 && last <= 0xDBFF) end -= 1; // don't cut through a surrogate pair
       body = body.slice(0, end);
       truncated = true;
+      // Surface truncation to the operator/journal — the in-prompt note lives ONLY inside the blind verifier's
+      // context, so without this a legit oversized house-rules file would silently drop its tail on every
+      // ticket with no operator-visible trace. Guarded so verifyPrompt() stays callable outside the Workflow
+      // runtime (e.g. the smoke test), where `log` is undefined.
+      if (typeof log === 'function') log(`house-rules truncated at ${MAX} chars for ticket ${t.id ?? '?'} (tail not graded)`);
     }
     body = body
       .replace(/<<<[\s/]{0,16}(?:END[\s_\-]{0,16})?UNTRUSTED[\s_\-]{0,16}PROJECT[\s_\-]{0,16}RULES\s{0,16}>>>/gi, '[fence-token neutralized — part of untrusted content]')

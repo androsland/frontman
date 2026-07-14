@@ -25,9 +25,11 @@
 //   (d) The neutralization regex is linear (ReDoS-safe): extracted straight from the template and timed
 //       on a 1M-char hostile body directly (the cap bounds what it sees in production, so this proves the
 //       regex's own linearity independent of the cap).
-//   (e) An oversized body is length-capped before interpolation (cap magnitude locked, surrogate-safe cut);
-//       the genuine truncation note appears only AFTER the closing marker, and an in-body "FRONTMAN NOTE"
-//       look-alike is neutralized. Inert for empty/normal bodies.
+//   (e) An oversized body is length-capped before interpolation (cap magnitude locked, exactly-MAX boundary,
+//       surrogate-safe cut); the genuine truncation note appears only AFTER the closing marker, and an in-body
+//       "FRONTMAN NOTE" look-alike is neutralized. Inert for empty/normal bodies.
+//   (f) Truncation emits an operator-visible log() line, guarded (typeof log === 'function') so verifyPrompt
+//       stays callable outside the Workflow runtime where `log` is undefined.
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -151,19 +153,29 @@ ok((vOut.split(OPEN).length - 1) === 1 && (vOut.split(CLOSE).length - 1) === 1,
 // ── Invariant (d): BOTH neutralization regexes are linear (ReDoS-safe) at scale ──────────────────────
 // The production path caps the body at ~8 KB BEFORE the regexes run, so exercising them through verifyPrompt
 // (which also .trim()s away a trailing whitespace run) can't reach a scale that distinguishes linear from
-// quadratic. Extract EACH .replace(/…/gi, …) regex literal from the template and time it directly on a ~1M-char
-// hostile body carrying both regexes' anchors (<<< …spaces… FRONTMAN …spaces…) — an unbounded quantifier in
-// either would blow up here; both bounded ones are single-digit ms.
-console.log('# (d) both neutralization regexes are linear (ReDoS-safe) on a ~1M-char body, tested directly');
+// quadratic. Extract EACH .replace(/…/gi, …) regex literal and time it directly on a hostile body built so
+// that EVERY bounded quantifier is actually reached: each segment starts with exactly the literal prefix
+// needed to arrive at one quantifier, then a long whitespace run stresses it before the match fails. This
+// covers the fence regex's five {0,16} segments and the note regex's one — an unbounded quantifier anywhere
+// would blow up here; all bounded ones stay single-digit ms.
+console.log('# (d) both neutralization regexes are linear (ReDoS-safe), every quantifier reached');
 const reLits = [...src.matchAll(/\.replace\((\/[\s\S]*?\/gi),/g)].map((m) => m[1]);
 ok(reLits.length === 2, `both neutralization regexes are present and extractable (found ${reLits.length})`);
-const hostile = '<<<' + ' '.repeat(500_000) + 'FRONTMAN' + ' '.repeat(500_000);
+const pad = ' '.repeat(120_000);
+const hostile = [
+  '<<<' + pad,                       // fence Q1: [\s/]{0,16} right after <<<
+  '<<<END' + pad,                    // fence Q2: [\s_\-]{0,16} inside the optional END group
+  '<<<UNTRUSTED' + pad,              // fence Q3: [\s_\-]{0,16} after UNTRUSTED
+  '<<<UNTRUSTEDPROJECT' + pad,       // fence Q4: [\s_\-]{0,16} after PROJECT
+  '<<<UNTRUSTEDPROJECTRULES' + pad,  // fence Q5: \s{0,16} before the closing >>>
+  'FRONTMAN' + pad,                  // note regex: [\s_\-]{0,16} after FRONTMAN
+].join('');
 for (let i = 0; i < reLits.length; i++) {
   const re = new Function(`return ${reLits[i]};`)();
   const started = performance.now();
   hostile.replace(re, 'X');
   const dt = performance.now() - started;
-  ok(dt < 500, `neutralization regex #${i + 1} (${reLits[i].slice(0, 24)}…) processed a ~1M-char hostile body in ${dt.toFixed(1)}ms (< 500ms; linear)`);
+  ok(dt < 500, `neutralization regex #${i + 1} (${reLits[i].slice(0, 24)}…) processed a ~${(hostile.length / 1e6).toFixed(1)}M-char all-anchors hostile body in ${dt.toFixed(1)}ms (< 500ms; linear)`);
 }
 
 // ── Invariant (e): oversized body is capped; the truncation note lives OUTSIDE the untrusted block ───
@@ -206,6 +218,26 @@ ok(Buffer.from(astralOut, 'utf8').toString('utf8') === astralOut,
 // The cap must NOT perturb the inert-when-absent property or normal small bodies.
 ok(make(undefined)(t, files) === base, 'cap leaves the no-rules output byte-identical to base');
 ok(make({ houseRules: rules })(t, files) === withRules, 'cap leaves a normal small body unchanged');
+// Boundary: a body of EXACTLY MAX chars must NOT be truncated; MAX+1 must be. Guards the `> MAX` (not `>=`)
+// off-by-one. MAX is read from the template so bumping the cap doesn't silently invalidate this.
+const MAX = Number(src.match(/const MAX = (\d+)/)[1]);
+const atMax = make({ houseRules: 'x'.repeat(MAX) })(t, files);
+ok(atMax.slice(atMax.indexOf(OPEN) + OPEN.length, atMax.indexOf(CLOSE)).includes('x'.repeat(MAX)),
+  `a body of exactly MAX (${MAX}) chars is NOT truncated — the whole body sits between the markers`);
+ok(!atMax.slice(atMax.indexOf(CLOSE)).includes('truncated at'), `no truncation note for an exactly-MAX (${MAX}) body`);
+ok(make({ houseRules: 'x'.repeat(MAX + 1) })(t, files).includes('truncated at'),
+  'a body of MAX+1 chars IS truncated (note present)');
+
+// ── Invariant (f): truncation is surfaced to the operator via log(), guarded so it's inert outside a runtime ─
+// The in-prompt note lives only in the blind verifier's context; log() gives the frontman/journal a trace.
+console.log('# (f) truncation emits an operator-visible log() line (guarded so verifyPrompt stays callable bare)');
+const makeWithLog = (a, sink) => new Function('args', 'log', `${hrDef}\n${fnDef}\nreturn verifyPrompt;`)(a, sink);
+let logged = [];
+makeWithLog({ houseRules: 'x'.repeat(MAX + 500) }, (m) => logged.push(m))(t, files);
+ok(logged.some((m) => /truncat/i.test(m)), 'truncation of an oversized body emits a log() line');
+logged = [];
+makeWithLog({ houseRules: 'small rules' }, (m) => logged.push(m))(t, files);
+ok(logged.length === 0, 'no truncation log() for a within-cap body');
 
 // ── Summary / exit code ─────────────────────────────────────────────────────────────────────────────
 const total = passed + fails.length;
