@@ -22,12 +22,17 @@
 // ─── ADAPT vs KEEP-VERBATIM — read before editing this template for a run ──────────────────────────
 //   ADAPT PER RUN:  the TICKETS array, the SEAT map, CROSS_VERIFY_SEAT, and the driver choice (the
 //                   sequential for-loop vs pipeline()). These encode THIS run's plan and routing.
-//   KEEP VERBATIM (security-critical — do NOT slim when adapting): verifyPrompt(), the HOUSE_RULES
-//                   coercion line, the two neutralization regexes, the MAX cap, and the three schemas.
-//                   They carry the house-rules injection hardening (the <<<…>>> fence, forged-marker
-//                   neutralization, the length cap, the ReDoS-bounded regexes) — slimming any of it
-//                   silently removes a security control. Guard an adapted copy BEFORE running it:
-//                     node <skill>/scripts/verify-prompt.test.mjs <this-file>   # runs all 52 invariants
+//   KEEP VERBATIM (security-critical — do NOT slim when adapting; each is flagged inline `// KEEP VERBATIM`):
+//                   (1) verifyPrompt() and its house-rules injection hardening — the <<<…>>> fence, the
+//                       forged-marker neutralization, the length cap, the ReDoS-bounded regexes;
+//                   (2) the HOUSE_RULES coercion line;
+//                   (3) the WORKER_SCHEMA / VERIFIER_SCHEMA output contracts (a loosened schema lets a
+//                       malformed or injected response smuggle a wrong status/verdict past the runtime);
+//                   (4) verifyStage's BLIND call — verifyPrompt gets workerResult.files_changed (PATHS
+//                       ONLY), never workerResult (that would leak the worker's narrative to the verifier).
+//                   Slimming any of these silently removes a security control. Guard an adapted copy BEFORE
+//                   running it — this checks ALL of the above (schemas + blind call included):
+//                     node <skill>/scripts/verify-prompt.test.mjs <this-file>
 
 export const meta = {
   name: 'frontman-orchestrate',
@@ -40,6 +45,7 @@ export const meta = {
 
 // ─── The three vocabularies, as schemas (this is the enforcement) ────────────────────────────────
 
+// KEEP VERBATIM — security-critical output contract; do not slim when adapting (see verify-prompt.test.mjs)
 const WORKER_SCHEMA = {
   type: 'object',
   additionalProperties: false,
@@ -59,6 +65,7 @@ const WORKER_SCHEMA = {
   },
 };
 
+// KEEP VERBATIM — security-critical output contract; do not slim when adapting (see verify-prompt.test.mjs)
 const VERIFIER_SCHEMA = {
   type: 'object',
   additionalProperties: false,
@@ -217,6 +224,9 @@ async function verifyStage(workerResult, t) {
   // Blind verification is UNCONDITIONAL: every change a worker produced is verified. There is no
   // trivial-skip, and in particular none inferred from worker-authored text (the party the doctrine
   // trusts least). A change small enough to skip verification was never delegated in the first place.
+  // KEEP VERBATIM — blind call: verifyPrompt gets workerResult.files_changed (PATHS ONLY), never
+  // workerResult itself (that would leak the worker's narrative into the "blind" verifier). Do not slim
+  // when adapting the driver, even though the surrounding for-loop/pipeline() choice IS adapt-per-run.
   const verdict = await agent(verifyPrompt(t, workerResult.files_changed), {
     agentType: 'frontman-verifier',
     model: CROSS_VERIFY_SEAT,   // undefined → inherit LEAD; set to a Codex seat for cross-family checking

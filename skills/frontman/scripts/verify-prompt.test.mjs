@@ -11,7 +11,8 @@
 //   node skills/frontman/scripts/verify-prompt.test.mjs <adapted.mjs>    # checks a per-run adapted copy first
 //
 // The optional path arg lets a LEAD run all invariants against an Orchestrated-mode workflow it adapted for a
-// run BEFORE executing it — catching a silently slimmed verifyPrompt()/HOUSE_RULES hardening. No arg → repo copy.
+// run BEFORE executing it — catching a silently slimmed verifyPrompt()/HOUSE_RULES hardening, a loosened
+// WORKER_SCHEMA/VERIFIER_SCHEMA output contract, or a non-blind verify call. No arg → repo copy.
 //
 // verifyPrompt()/HOUSE_RULES are NOT exported — the template is a sandboxed Workflow script with no
 // module system — so we extract them from the file text and rebuild them per-args via new Function.
@@ -34,6 +35,14 @@
 //       "FRONTMAN NOTE" look-alike is neutralized. Inert for empty/normal bodies.
 //   (f) Truncation emits an operator-visible log() line, guarded (typeof log === 'function') so verifyPrompt
 //       stays callable outside the Workflow runtime where `log` is undefined.
+//   (g) The WORKER_SCHEMA / VERIFIER_SCHEMA output contracts are preserved verbatim (additionalProperties:false,
+//       required fields, and the status/verdict enums) — a slimmed schema would let a malformed or injected
+//       response smuggle a wrong status/verdict past the runtime's structured-output enforcement.
+//   (h) verifyStage's blind call passes workerResult.files_changed (PATHS ONLY) — never bare workerResult,
+//       which would leak the worker's narrative into the "blind" verifier.
+//
+// (g)/(h) exist so the KEEP-VERBATIM banner's promise — "guard an adapted copy; this checks ALL of the above"
+// — is TRUE: the check covers the schemas and the blind call, not just verifyPrompt()/HOUSE_RULES.
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -252,6 +261,38 @@ ok(logged.some((m) => /truncat/i.test(m)), 'truncation of an oversized body emit
 logged = [];
 makeWithLog({ houseRules: 'small rules' }, (m) => logged.push(m))(t, files);
 ok(logged.length === 0, 'no truncation log() for a within-cap body');
+
+// ── Invariant (g): the schema output-contracts are preserved verbatim ────────────────────────────────
+// A slimmed schema (dropped `additionalProperties: false`, loosened enum, missing required) would let a
+// malformed or injected worker/verifier response smuggle a wrong status/verdict or extra fields past the
+// runtime's structured-output enforcement. This is KEEP-VERBATIM hardening the banner names, so the guard
+// must actually check it (not just verifyPrompt/HOUSE_RULES).
+console.log('# (g) WORKER_SCHEMA / VERIFIER_SCHEMA output contracts are preserved verbatim');
+const wsMatch = src.match(/^const WORKER_SCHEMA = [\s\S]*?\n};/m);
+const vsMatch = src.match(/^const VERIFIER_SCHEMA = [\s\S]*?\n};/m);
+if (!wsMatch || !vsMatch) {
+  console.error(`FAIL — WORKER_SCHEMA / VERIFIER_SCHEMA not found in expected verbatim form in ${templatePath}; a KEEP-VERBATIM output contract was removed or reformatted during adaptation. Restore it verbatim from the repo template.`);
+  process.exit(1);
+}
+const { WORKER_SCHEMA, VERIFIER_SCHEMA } = new Function(`${wsMatch[0]}\n${vsMatch[0]}\nreturn { WORKER_SCHEMA, VERIFIER_SCHEMA };`)();
+const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+ok(WORKER_SCHEMA.additionalProperties === false, 'WORKER_SCHEMA keeps additionalProperties:false (no smuggled extra fields)');
+ok(eq(WORKER_SCHEMA.required, ['status', 'files_changed', 'verify']), 'WORKER_SCHEMA keeps its required fields');
+ok(eq(WORKER_SCHEMA.properties?.status?.enum, ['DONE', 'DONE_WITH_CONCERNS', 'NEEDS_CONTEXT', 'BLOCKED']),
+  'WORKER_SCHEMA status enum is exactly the four worker statuses, unchanged');
+ok(VERIFIER_SCHEMA.additionalProperties === false, 'VERIFIER_SCHEMA keeps additionalProperties:false');
+ok(eq(VERIFIER_SCHEMA.required, ['verdict', 'criteria', 'not_checked']), 'VERIFIER_SCHEMA keeps its required fields');
+ok(eq(VERIFIER_SCHEMA.properties?.verdict?.enum, ['PASS', 'FAIL', 'PASS_WITH_NOTES']),
+  'VERIFIER_SCHEMA verdict enum is exactly the three verdicts — a loosened verdict would let an injected response smuggle an arbitrary verdict');
+
+// ── Invariant (h): verifyStage's blind call passes PATHS ONLY — never the worker's narrative ──────────
+// The blindness guarantee lives in one call site; a driver adaptation that passed `workerResult` (instead of
+// `workerResult.files_changed`) into verifyPrompt would leak the worker's self-report into the blind verifier.
+console.log('# (h) the verify stage calls verifyPrompt with paths only (blind), never the worker narrative');
+ok(/verifyPrompt\(\s*t\s*,\s*workerResult\.files_changed\s*\)/.test(src),
+  'verifyPrompt is called with (t, workerResult.files_changed) — paths only');
+ok(!/verifyPrompt\(\s*t\s*,\s*workerResult\s*\)/.test(src),
+  'verifyPrompt is NEVER called with bare workerResult (which would leak the worker narrative into the blind verifier)');
 
 // ── Summary / exit code ─────────────────────────────────────────────────────────────────────────────
 const total = passed + fails.length;
