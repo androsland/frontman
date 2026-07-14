@@ -7,7 +7,11 @@
 //
 // Runs on pure Node >=18, no imports, no network. Run it with:
 //
-//   node skills/frontman/scripts/verify-prompt.test.mjs
+//   node skills/frontman/scripts/verify-prompt.test.mjs                  # checks the repo template
+//   node skills/frontman/scripts/verify-prompt.test.mjs <adapted.mjs>    # checks a per-run adapted copy first
+//
+// The optional path arg lets a LEAD run all invariants against an Orchestrated-mode workflow it adapted for a
+// run BEFORE executing it — catching a silently slimmed verifyPrompt()/HOUSE_RULES hardening. No arg → repo copy.
 //
 // verifyPrompt()/HOUSE_RULES are NOT exported — the template is a sandboxed Workflow script with no
 // module system — so we extract them from the file text and rebuild them per-args via new Function.
@@ -33,18 +37,28 @@
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const templatePath = join(here, '..', 'templates', 'orchestrate.workflow.mjs');
+// Optional arg (process.argv[2]): a per-run ADAPTED copy to check before executing it. No arg → the repo
+// template, so the no-arg run is byte-for-byte the original behavior.
+const templatePath = process.argv[2] ? resolve(process.argv[2]) : join(here, '..', 'templates', 'orchestrate.workflow.mjs');
+if (process.argv[2]) console.log(`# target: ${templatePath}`);
 const src = readFileSync(templatePath, 'utf8');
 
 // Extract the two definitions verbatim from the template source and rebuild the closure per-args.
 // Anchor to line-start (/m) so a comment that merely MENTIONS these tokens can't be captured instead of the
 // real definition — both live at column 0. The HOUSE_RULES line is a single source line; verifyPrompt's only
 // line-initial `}` is its closer.
-const hrDef = src.match(/^const HOUSE_RULES = [^\n]+/m)[0];
-const fnDef = src.match(/^function verifyPrompt[\s\S]*?\n\}/m)[0];
+const hrMatch = src.match(/^const HOUSE_RULES = [^\n]+/m);
+const fnMatch = src.match(/^function verifyPrompt[\s\S]*?\n\}/m);
+if (!hrMatch || !fnMatch) {
+  // The security-critical builder was removed or renamed while adapting — fail loudly instead of crashing.
+  console.error(`FAIL — HOUSE_RULES / verifyPrompt not found in ${templatePath}; the KEEP-VERBATIM hardening was dropped during adaptation. Restore it verbatim from the repo template.`);
+  process.exit(1);
+}
+const hrDef = hrMatch[0];
+const fnDef = fnMatch[0];
 const make = (args) => new Function('args', `${hrDef}\n${fnDef}\nreturn verifyPrompt;`)(args);
 
 // A representative ticket + changed-file set. Content is irrelevant to the invariants under test.

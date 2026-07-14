@@ -17,7 +17,15 @@ The insight: the prose doctrine in `SKILL.md` is a set of rules a model *hopes t
 
 ## The template
 
-`templates/orchestrate.workflow.mjs` is the reference script. The frontman **copies and adapts it per run** — it is not a fixed program. Fill in `TICKETS` (or pass them as `args.tickets`), set the seat map, run it with the Workflow tool. It carries the three schemas (`WORKER_SCHEMA`, `VERIFIER_SCHEMA`, and a scout schema you can add), the seat routing, the escalation ladder, and the blind-verify prompt builder.
+`templates/orchestrate.workflow.mjs` is the reference script. The frontman **copies and adapts it per run** — it is not a fixed program — but only its **run-specific regions** are adaptable: fill in `TICKETS` (or pass them as `args.tickets`), set the `SEAT` map and `CROSS_VERIFY_SEAT`, and choose the driver (sequential `for`-loop vs `pipeline()`). The **`verifyPrompt()` builder and its house-rules hardening** — the `HOUSE_RULES` coercion line, the two neutralization regexes, the `MAX` length cap — and the **three schemas** are **security-critical: keep them verbatim, never slim them when adapting**, or the `<<<…>>>` fence, forged-marker neutralization, and ReDoS bounds silently vanish. The template's top comment marks the split (an `ADAPT vs KEEP-VERBATIM` banner, plus `// KEEP VERBATIM` markers directly above `verifyPrompt()` and the `HOUSE_RULES` line). It carries the three schemas (`WORKER_SCHEMA`, `VERIFIER_SCHEMA`, and a scout schema you can add), the seat routing, the escalation ladder, and the blind-verify prompt builder.
+
+**Pre-run check (guard an adapted copy).** Before executing a per-run workflow, run the bundled smoke test against it:
+
+```
+node <skill>/scripts/verify-prompt.test.mjs <your-adapted-copy.mjs>
+```
+
+It runs all 52 house-rules-hardening invariants against that file — byte-identical output when no rules, the delimited fence, forged-marker neutralization across separator variants, the length cap, and the ReDoS-bounded regexes — so a silently slimmed `verifyPrompt()` is caught before the run, not after. With no arg it checks the repo template (unchanged behavior); a copy that dropped the builder fails loudly with a non-zero exit.
 
 Key structural guarantees baked into the template:
 

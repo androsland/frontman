@@ -30,7 +30,7 @@ It reports: git repo state, and Codex install / auth / billing-mode. Add to that
 
 1. **Your own model** — you hold the LEAD seat. If it's mid-tier, say so and suggest switching before frontier-judgment work.
 2. **Agent tool** — can you spawn subagents?
-3. **Workflow engine** — does the harness expose a Workflow tool (deterministic `agent()` / `pipeline()` with per-call `schema` / `model` / `effort` / `isolation`, a run journal, a token budget)? If yes, **Orchestrated mode** is available — see [references/workflow-backend.md](references/workflow-backend.md).
+3. **Workflow engine** — does the harness expose a Workflow tool (deterministic `agent()` / `pipeline()` with per-call `schema` / `model` / `effort` / `isolation`, a run journal, a token budget)? If yes, **Orchestrated mode** is available: compile the plan into the Workflow template, adapting only its `TICKETS` / seats / driver and keeping the `verifyPrompt()` builder and its house-rules hardening **verbatim** (guard an adapted copy with `verify-prompt.test.mjs <copy>` before running it) — see [references/workflow-backend.md](references/workflow-backend.md).
 4. **Codex CLI** — the probe covers it; details and the version-tolerant fallback in [references/codex-workers.md](references/codex-workers.md). **Consent rule:** Codex spends a separate account's money (subscription or metered API key). Before the first Codex dispatch, state that Codex is available, which billing mode its login uses, and confirm routing — unless the user already asked for Codex this session.
 
 | Capabilities | Mode | Behavior |

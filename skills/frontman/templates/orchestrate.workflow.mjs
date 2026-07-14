@@ -1,6 +1,7 @@
 // orchestrate.workflow.mjs — reference Workflow script for frontman's ORCHESTRATED mode.
 //
-// This is a TEMPLATE the frontman adapts per run — not a fixed program. The frontman does the
+// This is a TEMPLATE the frontman adapts per run — not a fixed program, but adapt ONLY the marked
+// regions (see the ADAPT vs KEEP-VERBATIM banner below). The frontman does the
 // judgment (probe, plan, classify, author tickets, choose seats) and encodes the result here,
 // then runs it with the Workflow tool. What the Workflow engine buys you over hand-driving agents:
 //
@@ -17,6 +18,16 @@
 //   • budget — scale crew/effort to the user's token target; hard-stop instead of silently degrading.
 //
 // FIRST LAW still governs: economics chooses among seats that clear the bar; it never lowers the bar.
+//
+// ─── ADAPT vs KEEP-VERBATIM — read before editing this template for a run ──────────────────────────
+//   ADAPT PER RUN:  the TICKETS array, the SEAT map, CROSS_VERIFY_SEAT, and the driver choice (the
+//                   sequential for-loop vs pipeline()). These encode THIS run's plan and routing.
+//   KEEP VERBATIM (security-critical — do NOT slim when adapting): verifyPrompt(), the HOUSE_RULES
+//                   coercion line, the two neutralization regexes, the MAX cap, and the three schemas.
+//                   They carry the house-rules injection hardening (the <<<…>>> fence, forged-marker
+//                   neutralization, the length cap, the ReDoS-bounded regexes) — slimming any of it
+//                   silently removes a security control. Guard an adapted copy BEFORE running it:
+//                     node <skill>/scripts/verify-prompt.test.mjs <this-file>   # runs all 52 invariants
 
 export const meta = {
   name: 'frontman-orchestrate',
@@ -107,10 +118,12 @@ const isFail = (r) => !r || r.status === 'BLOCKED' || r.status === 'NEEDS_CONTEX
 // Kept to ONE physical line so the smoke test's single-line regex extractor still captures the whole thing.
 // verifyPrompt() length-caps this before interpolation (see there) — the cap lives in the prompt builder so
 // the truncation NOTE can be emitted OUTSIDE the untrusted block rather than baked into the untrusted body.
+// KEEP VERBATIM — security-critical; do not slim when adapting (see verify-prompt.test.mjs)
 const HOUSE_RULES = (() => { try { return String(args?.houseRules ?? '').trim(); } catch { return ''; } })();
 
 // Blind-verifier prompt: ORIGINAL task + criteria + changed PATHS (+ standing rules if provided).
 // Never the worker's narrative. When HOUSE_RULES is empty, the appended section is omitted entirely.
+// KEEP VERBATIM — security-critical; do not slim when adapting (see verify-prompt.test.mjs)
 function verifyPrompt(t, files) {
   const sections = [
     `ORIGINAL TASK (verbatim, from the user):\n${t.task}`,
