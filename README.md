@@ -18,7 +18,7 @@ Anthropic's own engineering shows both sides of the ledger. Their [multi-agent r
 2. **Routes by capability class, not model name** — FRONTIER (judgment), WORKHORSE (implementation), FAST (scanning). Classes resolve at runtime to stable aliases (`sonnet`/`haiku`) and to whatever Codex tiers your account offers today. New model releases require zero skill edits.
 3. **Delegates with self-contained tickets** — 7 core sections plus a mandatory write-set fence on implementation work; file paths instead of pasted context; gradeable acceptance criteria.
 4. **Collects four-status reports** — `DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED` — with a bounded escalation ladder: two failures at a seat, then escalate one seat or take over. Never a third identical retry.
-5. **Verifies like it trusts no one** — the project's real build/test command first (free), then a blind verifier that gets the original task verbatim and none of the worker's reasoning. Required for every accepted change except single-file zero-logic edits. Cross-family when possible: Claude verifies Codex work and vice versa.
+5. **Verifies like it trusts no one** — the project's real gate first (free), then a blind verifier that gets the original task verbatim and none of the worker's reasoning. Required for **every change a worker produces** — no exemption inferred from the worker's own report; a change trivial enough to skip review is one the LEAD makes inline, never a ticket. Cross-family when possible: Claude verifies Codex work and vice versa.
 6. **Respects your budget both directions** — sequential dispatch by default (prompt-cache warmth), announced fan-outs, and visible degradation under quota pressure. **Economics never lowers the quality bar.**
 
 ## What's new vs fable-foreman
@@ -31,6 +31,8 @@ Three additions, all aimed at the original's one honest gap — that it was *une
   - `ledger` — structured state (`init/add/set/attempt/note/show/reconcile`) so the ledger can't drift from prose edits.
   - `verify-guard` — the commit-before / porcelain-after mutation backstop as a **real gate**: `snapshot` refuses a dirty tree, `check` exits non-zero if the verifier moved HEAD or touched a tracked file.
 - **Sharper honesty** — an explicit [when-NOT-to-use](#when-not-to-use-it) section, a gated `CLAUDE.md` trigger that matches the dispatch gate instead of firing on every multi-file edit, and a capability matrix row for Orchestrated mode.
+
+**v0.3** — blind verification is now unconditional in Orchestrated mode (the trivial-skip that keyed off the worker's own summary is gone), plus an optional `.frontman/house-rules.md` whose standing conventions the verifier enforces on every change.
 
 The pure-prompt Discipline modes still work with none of the above (claude.ai / Desktop), honestly labeled "self-reviewed, not blind-verified."
 

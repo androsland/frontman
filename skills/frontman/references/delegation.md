@@ -21,6 +21,8 @@ Inline-vs-path rule: short essentials go **inline verbatim** — the task text, 
 
 One task per ticket. EXPECTED OUTCOME must be gradeable — if you can't write the acceptance check, you're not ready to delegate.
 
+**Never fence in frontman's own control surface.** `.frontman/**` — the ledger (what happened) and `house-rules.md` (the standing rules the verifier grades against) — must never appear in a worker's WRITE SET. A worker that can rewrite the rules it will be graded against, or the ledger that proves what happened, defeats the verification it is subject to; the standing rules are also injected into the verifier as *untrusted reference text*, not instructions (verification.md). Changes to anything under `.frontman/` come from a human-authored ticket, never agent self-review.
+
 ## Parallel dispatch
 
 Only for genuinely independent tickets, and only with **provably disjoint write sets**:

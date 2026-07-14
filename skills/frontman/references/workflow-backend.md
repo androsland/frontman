@@ -47,6 +47,6 @@ The workflow returns `{ accepted, rejected, results }` — structured, not prose
 
 ## When Orchestrated mode is NOT the right tier
 
-- Single-worker, single-file contained task → the whole workflow apparatus is overhead. Dispatch one `frontman-worker` directly, or just do it inline.
+- Single-worker, single-file contained task → the whole workflow apparatus is overhead. A no-logic edit the LEAD types inline (no worker, nothing to verify); anything worth delegating goes to one direct `frontman-worker` dispatch — **still blind-verified per the doctrine**, just without the workflow scaffolding.
 - No Workflow engine in the harness → fall back to Full/prose mode (Agent tool, hand-driven) or a Discipline mode. The capability matrix in `SKILL.md` decides.
 - The Workflow tool requires explicit user opt-in to multi-agent orchestration in some harnesses. Frontman announces the fan-out (crew size, seats, why) before launching either way — that announcement *is* the opt-in moment.
