@@ -46,13 +46,35 @@ The pure-prompt Discipline modes still work with none of the above (claude.ai / 
 
 ## Install
 
-**Claude Code (manual):** copy `skills/frontman` into `~/.claude/skills/` and `agents/*.md` into `~/.claude/agents/`. The scripts run with your system `node` (>=18), zero dependencies.
+**Claude Code (plugin) — easiest.** Add this repo as a plugin marketplace, then install:
 
-**Claude Code (plugin):** if you publish this fork, `/plugin marketplace add <your-repo>` then `/plugin install frontman@frontman`.
+```
+/plugin marketplace add androsland/frontman
+/plugin install frontman@frontman
+```
 
-**Claude Desktop / claude.ai:** package the skill folder as a ZIP and upload under Settings → Customize → Skills (requires code execution). There it runs in *Discipline mode* — honest same-model self-review, weaker than full mode, and it says so.
+**Claude Code (manual).** Copy the skill and its agents into your Claude config. The scripts run on your system `node` (≥18) with zero dependencies:
 
-**Recommended** `CLAUDE.md` line — gated to match the dispatch gate, so it doesn't fire the machinery on small work:
+```bash
+git clone https://github.com/androsland/frontman.git
+mkdir -p ~/.claude/skills ~/.claude/agents
+cp -r frontman/skills/frontman ~/.claude/skills/
+cp frontman/agents/*.md ~/.claude/agents/
+```
+
+Sanity-check the install — prints your job-site capabilities (git + Codex state), secret-safe:
+
+```bash
+node ~/.claude/skills/frontman/scripts/frontman.mjs probe
+```
+
+**Claude Desktop / claude.ai.** Zip the skill folder and upload it under **Settings → Customize → Skills** (requires code execution). There it runs in *Discipline mode* — honest same-model self-review, weaker than full mode, and it says so:
+
+```bash
+cd skills && zip -r frontman.zip frontman
+```
+
+**Recommended `CLAUDE.md` line** — gated to match the dispatch gate, so it doesn't fire the machinery on small work:
 
 ```
 For any multi-file or multi-stage task that would burn premium quota on non-judgment work, use the frontman skill.
